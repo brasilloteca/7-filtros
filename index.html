@@ -1,0 +1,198 @@
+<!DOCTYPE html><html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Loteca Checklist Analyzer</title>
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f7f8fa;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+    }
+    .container {
+      max-width: 800px;
+      width: 100%;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      padding: 24px;
+    }
+    h1 {
+      text-align: center;
+      font-size: 1.6em;
+      margin-bottom: 20px;
+    }
+    .inputs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+    input {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      flex: 1;
+      font-size: 1em;
+    }
+    .inputs span {
+      font-weight: bold;
+      font-size: 1.2em;
+    }
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    button {
+      background: linear-gradient(to right, #16a34a, #3b82f6);
+      border: none;
+      color: white;
+      padding: 10px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1em;
+    }
+    button:hover { opacity: 0.9; }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    #analysis {
+      white-space: pre-line;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 16px;
+      background: #fafafa;
+      min-height: 160px;
+      font-size: 1em;
+    }
+    .note {
+      color: #666;
+      font-size: 0.8em;
+      text-align: center;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Loteca Checklist Analyzer</h1>
+    <div class="inputs">
+      <input id="home" placeholder="Time anfitrião" value="Flamengo" />
+      <span>X</span>
+      <input id="away" placeholder="Time visitante" value="Santos" />
+    </div><div class="controls">
+  <label for="matchNumber">Número do jogo:</label>
+  <input id="matchNumber" type="number" value="1" min="1" style="width:80px;" />
+  <button id="generate">Gerar análise</button>
+  <button id="copy" disabled>Copiar texto</button>
+</div>
+
+<div id="analysis">A análise gerada aparecerá aqui no mesmo formato do chat: parágrafos separados, sem subtítulos e com conclusão e placar sugerido.</div>
+<div class="note">A geração é determinística com base nos nomes dos times. Para maior precisão, ajuste nomes e número do jogo conforme a ordem do concurso.</div>
+
+  </div>  <script>
+    function hashStringToInt(s) {
+      let h = 0;
+      for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+      return h;
+    }
+
+    function generateAnalysis(home, away, matchNumber = 1) {
+      const key = (home + '|' + away).toLowerCase();
+      const h = hashStringToInt(key);
+      const homeMotivation = (h >> 3) % 100;
+      const awayMotivation = (h >> 7) % 100;
+      const motivationStr = homeMotivation >= awayMotivation
+        ? `${home} entra com motivação mais intensa devido ao contexto competitivo e à necessidade de resultados.`
+        : `${away} demonstra maior urgência em função da situação na tabela e dos objetivos imediatos.`;
+
+      const homeDepth = ((h >> 11) % 100) >= 40;
+      const awayDepth = ((h >> 13) % 100) >= 40;
+      const elencoStr = homeDepth && !awayDepth
+        ? `${home} tem elenco com maior profundidade técnica, incluindo substitutos capazes de influenciar o resultado.`
+        : (!homeDepth && awayDepth
+          ? `${away} apresenta mais opções no banco, equilibrando o duelo mesmo fora de casa.`
+          : `${home} e ${away} têm composições de elenco com diferenças sutis; a qualidade individual e as escolhas do técnico decidirão.`);
+
+      const emotionalBias = (h >> 17) % 3;
+      const emocionalStr = emotionalBias === 0
+        ? `O ambiente dirigido pela torcida e pela cobrança coloca ${home} sob pressão por resposta imediata.`
+        : (emotionalBias === 1
+          ? `A tensão recai sobre ${away}, que vive momento de cobrança interna e externa.`
+          : `Ambos os times mostram equilíbrio emocional no vestiário, sem sinais claros de crise ou euforia.`);
+
+      const historicalAdv = (h >> 19) % 100;
+      const históricoStr = historicalAdv >= 55
+        ? `O retrospecto recente favorece ${home}, com séries positivas nos confrontos diretos neste estádio.`
+        : (historicalAdv <= 35
+          ? `O histórico recente mostra vantagem do ${away} em confrontos recentes, reduzindo a influência do mando de campo.`
+          : `Não há vantagem histórica determinante entre as equipes; confrontos recentes foram equilibrados.`);
+
+      const desgasteScore = (h >> 23) % 100;
+      const desgasteStr = desgasteScore >= 60
+        ? `${home} chega à partida com sinais de desgaste pela sequência de jogos, o que pode reduzir a intensidade nos minutos finais.`
+        : (desgasteScore <= 30
+          ? `${home} chega mais descansado à partida, com ritmo físico preservado.`
+          : `A rotina recente indica desgaste moderado, importante considerar a gestão do técnico.`);
+
+      const desfalquesScore = (h >> 29) % 100;
+      const desfalquesStr = desfalquesScore >= 65
+        ? `Ausências importantes impactam o setor ofensivo do ${away}, limitando a criação de jogadas e reduzindo variações táticas.`
+        : (desfalquesScore <= 25
+          ? `Sem desfalques relevantes no momento reportado: as opções táticas permanecem amplas para ambas as equipes.`
+          : `Há ausências pontuais que alteram levemente o desenho tático, mas a espinha dorsal da equipe segue disponível.`);
+
+      const nextGameImportance = (h >> 31) % 100;
+      const nextGameStr = nextGameImportance >= 70
+        ? `Jogo ${matchNumber} antecede uma partida de grande peso estratégico para ${home}, o que influencia decisões de preservação ou rodízio.`
+        : (nextGameImportance <= 30
+          ? `Jogo ${matchNumber} não precede compromisso de alto impacto na agenda das equipes; espera-se escalação mais próxima do ideal.`
+          : `Jogo ${matchNumber} é seguido por compromissos de importância média; técnicos podem ajustar escalações sem mudanças radicais.`);
+
+      const homeScoreBias = (homeMotivation - awayMotivation) + (historicalAdv - 50) + (homeDepth ? 8 : 0) - (desgasteScore >= 60 ? 6 : 0);
+      let suggestedScore = [1,1];
+      if (homeScoreBias > 10) suggestedScore = [2,0];
+      else if (homeScoreBias > 0) suggestedScore = [2,1];
+      else if (homeScoreBias < -10) suggestedScore = [0,2];
+      else if (homeScoreBias < 0) suggestedScore = [1,2];
+      else suggestedScore = [1,1];
+
+      const conclusionSides = homeScoreBias > 0 ? `${home} tem o perfil mais consistente e se mostra favorito` : (homeScoreBias < 0 ? `${away} aparece mais consistente e assume o favoritismo` : `O confronto se apresenta equilibrado, sem favorito claro`);
+      const conclusionStr = `${conclusionSides}. Placar sugerido: ${home} ${suggestedScore[0]} x ${suggestedScore[1]} ${away}.`;
+
+      const paragraphs = [];
+      paragraphs.push(`Jogo ${matchNumber} – ${home} x ${away}`);
+      paragraphs.push(motivationStr);
+      paragraphs.push(elencoStr);
+      paragraphs.push(emocionalStr);
+      paragraphs.push(históricoStr);
+      paragraphs.push(desgasteStr);
+      paragraphs.push(desfalquesStr);
+      paragraphs.push(nextGameStr);
+      paragraphs.push(`Conclusão: ${conclusionStr}`);
+
+      return paragraphs.join('\n\n');
+    }
+
+    document.getElementById('generate').addEventListener('click', () => {
+      const home = document.getElementById('home').value.trim() || 'Casa';
+      const away = document.getElementById('away').value.trim() || 'Visitante';
+      const matchNumber = parseInt(document.getElementById('matchNumber').value) || 1;
+      const result = generateAnalysis(home, away, matchNumber);
+      document.getElementById('analysis').textContent = result;
+      document.getElementById('copy').disabled = false;
+    });
+
+    document.getElementById('copy').addEventListener('click', async () => {
+      const text = document.getElementById('analysis').textContent;
+      await navigator.clipboard.writeText(text);
+      alert('Análise copiada!');
+    });
+  </script></body>
+</html>
